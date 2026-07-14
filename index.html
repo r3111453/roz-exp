@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROZ 升級經驗分析工具</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #ffffff;
+            --card-bg: #f8fafc;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
+            --text-dim: #64748b;
+            --success: #059669;
+        }
+
+        body {
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: var(--primary);
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--text-dim);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            ring: 2px solid var(--primary);
+        }
+
+        .flex-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            cursor: pointer;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .btn-now {
+            background: #cbd5e1;
+            color: #1e293b;
+            padding: 0 12px;
+            font-size: 0.75rem;
+        }
+
+        .btn-now:hover { background: #94a3b8; }
+
+        .btn-calc {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+
+        .btn-calc:hover { background: var(--primary-hover); }
+
+        /* 結果區塊 */
+        .result-box {
+            display: none;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #166534;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .res-item {
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .highlight {
+            font-weight: 800;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .table-preview {
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            background: white;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td, th {
+            padding: 6px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ROZ 升級經驗分析</h1>
+
+    <div class="card">
+        <h2>📊 內建等級經驗表 (Lv 1 - 110)</h2>
+        <div class="table-preview">
+            <table id="expTable">
+                <thead><tr><th>等級</th><th>升級所需經驗</th></tr></thead>
+                <tbody id="expBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>⏱️ 經驗追蹤紀錄</h2>
+        <div class="grid">
+            <div>
+                <label>【先前紀錄時間】</label>
+                <div class="flex-row" style="margin-bottom:12px;">
+                    <input type="time" id="oldTime" step="1">
+                    <button class="btn-now" onclick="setTime('oldTime')">現在</button>
+                </div>
+                <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                    <div>
+                        <label>等級</label>
+                        <input type="number" id="oldLv" value="1" min="1" max="109">
+                    </div>
+                    <div>
+                        <label>經驗 %</label>
+                        <input type="number" id="oldPct" step="0.0001" value="0">
+                    </div>
+                </div>
+            </div>
+            <div>
+                <label>【當前紀錄時間】</label>
+                <div class="flex-row" style="margin-bottom:12px;">
+                    <input type="time" id="newTime" step="1">
+                    <button class="btn-now" onclick="setTime('newTime')">現在</button>
+                </div>
+                <div class="grid" style="grid-template-columns: 1fr 1fr;">
+                    <div>
+                        <label>等級</label>
+                        <input type="number" id="newLv" value="1" min="1" max="109">
+                    </div>
+                    <div>
+                        <label>經驗 %</label>
+                        <input type="number" id="newPct" step="0.0001" value="0">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>🎯 目標等級推估</h2>
+        <label>想要達到的目標等級 (Lv)</label>
+        <input type="number" id="targetLv" value="110" min="2" max="110">
+        <p style="font-size: 0.75rem; color: var(--text-dim); margin-top: 5px;">* 系統將計算從「當前狀態」到達此等級所需的總時間。</p>
+        
+        <button class="btn-calc" onclick="calculate()">分析每小時經驗與目標時間</button>
+    </div>
+
+    <div id="result" class="result-box">
+        <div class="res-item">間隔時間：<span id="resInterval" class="highlight">0</span> 分鐘</div>
+        <div class="res-item">每小時獲得經驗：<span id="resRate" class="highlight">0</span></div>
+        <hr style="border:0; border-top: 1px solid #bbf7d0; margin: 15px 0;">
+        <div class="res-item" id="resToNext"></div>
+        <div class="res-item" id="resToTarget" style="margin-top: 10px; font-weight: bold; border-top: 1px dashed #bbf7d0; padding-top: 10px;"></div>
+    </div>
+</div>
+
+<script>
+    // 內建經驗值表 (依據用戶提供)
+    const EXP_DATA = {
+        1:0, 2:2443, 3:2711, 4:3009, 5:3339, 6:3706, 7:4113, 8:4565, 9:5067, 10:5624,
+        11:6242, 12:6928, 13:7690, 14:8535, 15:9473, 16:10515, 17:11671, 18:12954, 19:14378, 20:15959,
+        21:17714, 22:19662, 23:21824, 24:24224, 25:26888, 26:29845, 27:33127, 28:36770, 29:40814, 30:45303,
+        31:50286, 32:55817, 33:61956, 34:68771, 35:76335, 36:84731, 37:94051, 38:104396, 39:115879, 40:128625,
+        41:142773, 42:158478, 43:175910, 44:195260, 45:216738, 46:240579, 47:267042, 48:296416, 49:329021, 50:365213,
+        51:434603, 52:1037509, 53:1525139, 54:2241953, 55:3295672, 56:4844639, 57:7121618, 58:10468780, 59:15389107, 60:22621987,
+        61:25789065, 62:29399534, 63:33515469, 64:38207635, 65:43556704, 66:49654642, 67:56606292, 68:64531173, 69:73565537, 70:83864712,
+        71:94767124, 72:107086850, 73:121008141, 74:136739199, 75:154515294, 76:174602283, 77:197300579, 78:222949654, 79:251933109, 80:284684413,
+        81:318846542, 82:357108127, 83:399961102, 84:447956434, 85:501711206, 86:561916551, 87:629346536, 88:704868120, 89:789452294, 90:884186569,
+        91:1061023882, 92:1273228658, 93:1527874389, 94:1833449266, 95:2200139119, 96:2640166942, 97:3168200330, 98:3801840396, 99:4562208475,
+        100:5474650170, 101:6569580204, 102:7883496244, 103:9460195492, 104:11352234590, 105:13622681508, 106:16347217809, 107:19616661370, 108:23539993644, 109:28247992372,
+        110:33897590846
+    };
+
+    // 初始化表格內容
+    const tbody = document.getElementById('expBody');
+    for (let lv in EXP_DATA) {
+        let row = tbody.insertRow();
+        row.insertCell(0).innerText = lv;
+        row.insertCell(1).innerText = EXP_DATA[lv].toLocaleString();
+    }
+
+    function setTime(id) {
+        const now = new Date();
+        document.getElementById(id).value = now.toTimeString().split(' ')[0];
+    }
+
+    function parseToMinutes(timeStr) {
+        if (!timeStr) return NaN;
+        const [h, m, s] = timeStr.split(':').map(Number);
+        return h * 60 + m + (s || 0) / 60;
+    }
+
+    // 計算指定等級與百分比下的「絕對總累積經驗」
+    function getAbsoluteTotalExp(lv, pct) {
+        let sum = 0;
+        // 累加 1 到 lv 的經驗
+        for (let i = 1; i <= lv; i++) {
+            sum += EXP_DATA[i];
+        }
+        // 加上目前升下一級 (lv+1) 已經跑的百分比
+        const nextExp = EXP_DATA[lv + 1] || 0;
+        return sum + (nextExp * (pct / 100));
+    }
+
+    function formatTime(totalHours) {
+        if (totalHours <= 0) return "0 分鐘";
+        const h = Math.floor(totalHours);
+        const m = Math.round((totalHours - h) * 60);
+        return `${h} 小時 ${m} 分鐘`;
+    }
+
+    function calculate() {
+        const t1 = parseToMinutes(document.getElementById('oldTime').value);
+        const t2 = parseToMinutes(document.getElementById('newTime').value);
+        
+        if (isNaN(t1) || isNaN(t2)) { alert("請輸入時間"); return; }
+        let diff = t2 - t1;
+        if (diff < 0) diff += 1440; // 跨夜
+        if (diff === 0) { alert("兩次紀錄時間不能相同"); return; }
+
+        const lv1 = parseInt(document.getElementById('oldLv').value);
+        const p1 = parseFloat(document.getElementById('oldPct').value);
+        const lv2 = parseInt(document.getElementById('newLv').value);
+        const p2 = parseFloat(document.getElementById('newPct').value);
+        const targetLv = parseInt(document.getElementById('targetLv').value);
+
+        if (lv2 < lv1 || (lv2 === lv1 && p2 < p1)) {
+            alert("當前經驗值不能低於先前紀錄！"); return;
+        }
+
+        if (targetLv <= lv2) {
+            alert("目標等級必須高於當前等級！"); return;
+        }
+
+        // 1. 計算時薪
+        const exp1 = getAbsoluteTotalExp(lv1, p1);
+        const exp2 = getAbsoluteTotalExp(lv2, p2);
+        const gained = exp2 - exp1;
+        const expPerHour = (gained / diff) * 60;
+
+        // 2. 計算升下一級所需
+        const nextLevelNeed = (EXP_DATA[lv2 + 1] || 0) * (1 - (p2 / 100));
+        const timeToNext = expPerHour > 0 ? (nextLevelNeed / expPerHour) : 0;
+
+        // 3. 計算到目標等級所需
+        // 目標等級的總經驗 = 累加到 targetLv 之前的全部
+        let targetTotalExp = 0;
+        for (let i = 1; i <= targetLv; i++) {
+            targetTotalExp += EXP_DATA[i];
+        }
+        const remainingToTarget = targetTotalExp - exp2;
+        const timeToTarget = expPerHour > 0 ? (remainingToTarget / expPerHour) : 0;
+
+        // 顯示結果
+        document.getElementById('result').style.display = 'block';
+        document.getElementById('resInterval').innerText = diff.toFixed(1);
+        document.getElementById('resRate').innerText = Math.floor(expPerHour).toLocaleString();
+        
+        const nextBox = document.getElementById('resToNext');
+        const targetBox = document.getElementById('resToTarget');
+
+        if (expPerHour > 0) {
+            nextBox.innerHTML = `距離升級至 <b>${lv2 + 1}</b> 級還需：<span style="color:var(--primary)">${formatTime(timeToNext)}</span>`;
+            targetBox.innerHTML = `🏁 到達目標等級 <b>${targetLv}</b> 級總共還需：<span style="color:var(--primary)">${formatTime(timeToTarget)}</span>`;
+        } else {
+            nextBox.innerText = "經驗值無增長，無法預估時間。";
+            targetBox.innerText = "";
+        }
+    }
+</script>
+
+</body>
+</html>
